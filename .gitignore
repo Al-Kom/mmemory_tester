@@ -1,0 +1,7 @@
+# ignore list for C-project
+bin/
+obj/
+*.cbp
+*.depend
+*.layout
+
