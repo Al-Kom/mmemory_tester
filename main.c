@@ -8,11 +8,10 @@
 
 int test_init()
 {
-    if( initialize(3,5)    ||
-       !(initialize(-2,6)) ||
-       !(initialize(4,-7)) ||
-       !(initialize(-3,-7))||
-       )
+    if( initialize(3,5)  ||       //positive test
+       !initialize(-2,6) ||       //negative test (and next)
+       !initialize(4,-7) ||
+       !initialize(-3,-7))
         return 1;
     return 0;
 }
@@ -24,6 +23,6 @@ int test_init()
 int main()
 {
     printf("Hello world!\n");
-    printf("test initialize: %s\n", test_init()? "NOT pass":"pass");
+    printf("test initialize: \t\t%s\n", test_init()? "FAIL":"PASS");
     return 0;
 }
