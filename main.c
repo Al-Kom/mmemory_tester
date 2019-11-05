@@ -8,10 +8,14 @@
 
 int test_init(void)
 {
-    if( initialize(3,5)  ||       //positive test
-       !initialize(-2,6) ||       //negative test (and next)
-       !initialize(4,-7) ||
-       !initialize(-3,-7))
+    //positive test
+    if(initialize(3,5))
+        return 1;
+    //negative tests
+    if(!initialize(-2,6)    ||
+       !initialize(4,-7)    ||
+       !initialize(-3,-7)   ||
+       !initialize(0,4))
         return 1;
     return 0;
 }
@@ -25,16 +29,32 @@ int test_malloc(void)
     if(_malloc(&ptr, 4))
         return 1;
     //negative tests
-         //test allocation of non-initialized memory
-    initialize(-3,3);
-    if(!_malloc(&ptr, 4))
-        return 1;
     initialize(3,3);
         //test with bad parameters
-    if(!_malloc(&ptr, -3) ||
-       !_malloc(&ptr, 0)  ||
-       !_malloc(0, 5)     ||
+    if(!_malloc(&ptr, -3)   ||
+       !_malloc(&ptr, 0)    ||
+       !_malloc(0, 5)       ||
        !_malloc(0, 0))
+        return 1;
+    return 0;
+}
+
+
+int test_free(void)
+{
+    VA ptr;
+    //positive tests
+        //test ...
+    initialize(3,3);
+    _malloc(&ptr,4);
+    if(_free(ptr))
+        return 1;
+    //negative tests
+        //test with bad parameter
+    _malloc(&ptr,4);
+    if(!_free(0)        ||
+       !_free(ptr + 1)  ||
+       !_free(-1))
         return 1;
     return 0;
 }
@@ -43,30 +63,51 @@ int test_malloc(void)
 // integrated test functions
 //----------------------------------------------------------------------------------
 
-int integr_test_malloc_free()
+int integr_test_malloc_free(void)
 {
-    VA ptr1, ptr2, ptr3;
-    //positive tests
-        //test allocation after last block
+    VA ptr1, ptr2, ptr3, ptr4;
+    //-----positive tests-----
+    //test allocation after last block
+    if(initialize(3,3)      ||
+        _malloc(&ptr1, 3)   ||
+        _malloc(&ptr2, 1))
+        return 1;
+    //test free block between first and third blocks
+    if(_malloc(&ptr3,3)   ||
+       _free(ptr2))
+        return 1;
+    //test add after last, cause space between first and third is too few (1b)
+    if(_malloc(&ptr4,2))
+        return 1;
+    //test insert between first and third (1b), no space after last
+    if(_malloc(&ptr2,1))
+        return 1;
+    //test insert between zero and first blocks
+    if(_free(ptr1)  ||
+       _malloc(&ptr1,2))
+        return 1;
+    //-----negative tests-----
+    //test allocation of non-initialized memory
+    if(!initialize(-3,3) ||
+       !_malloc(&ptr1, 4))
+        return 1;
+    //test "no enough memory" when no blocks exist
+    if(initialize(3,3) ||
+       !_malloc(&ptr1,10))
+        return 1;
+    //test "no enough memory" after last block
     if(initialize(3,3)      ||
        _malloc(&ptr1, 4)    ||
-       _malloc(&ptr2, 2))
+       !_malloc(&ptr2,10))
         return 1;
-/*TODO (after _free adding):+test insert between two blocks
-                            +test insert between zero and first blocks
-                            +test bad insert with allocation after last*/
-    //negative tests
-        //test "no enough memory" when no blocks exist
-    initialize(3,3);
-    if(!_malloc(&ptr1,10))
+    //test bad insert between two blocks when no space after
+    if(initialize(3,3)  ||
+       _malloc(&ptr1,3) ||
+       _malloc(&ptr2,2) ||
+       _malloc(&ptr3,4) ||
+       _free(ptr2)      ||  //all free space (2b) is between ptr1 and ptr3
+       !_malloc(&ptr2,3))   //but trying allocate 3b
         return 1;
-        //test "no enough memory" after last block
-    initialize(3,3);
-    _malloc(&ptr1, 4);
-    if(!_malloc(&ptr2,10))
-        return 1;
-/*TODO (after _free adding):-test bad insert between two blocks, not after
-                            - -//- between zero and first blocks, not after*/
     return 0;
 }
 
@@ -77,9 +118,10 @@ int integr_test_malloc_free()
 int main(void)
 {
     printf("Hello world!\n");
-    //printf("test initialize: \t\t%s\n", test_init()? "FAIL":"PASS");
-    printf("test memory allocation: \t%s\n", test_init()? "FAIL":"PASS");
-    printf("intr. test malloc-free: \t%s\n",
+    printf("test initialize: \t\t%s\n", test_init()? "FAIL":"PASS");
+    printf("test memory allocation: \t%s\n", test_malloc()? "FAIL":"PASS");
+    printf("test memory free: \t\t%s\n", test_free()? "FAIL":"PASS");
+    printf("INTGR test allocation-free: \t%s\n",
            integr_test_malloc_free()? "FAIL":"PASS");
     return 0;
 }
