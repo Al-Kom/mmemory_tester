@@ -85,6 +85,7 @@ Block* create_block(char* data, size_t data_size, Block* next)
     res->next = next;
     return res;
 }
+
 //----------------------------------------------------------------------------------
 // library functions
 //----------------------------------------------------------------------------------
@@ -93,7 +94,7 @@ int _malloc (VA* ptr, size_t szBlock)
 {
     //check initialization
     if(!is_inited)
-        return -2;
+        return 1;
     //verify arguments
     if(!ptr ||                          //non-valid address
        ((long long)szBlock <= 0))       //or undefined behavior
@@ -129,32 +130,58 @@ int _malloc (VA* ptr, size_t szBlock)
         {
             cur_end = cur_block->data + cur_block->size;
             next_start = next_block->data;
-            if(cur_end + szBlock < next_start)      //enough memory to insert new
+            if(cur_end + szBlock <= next_start)      //enough memory to insert new
             {                                       //block between two blocks
                 //create and initialize new block
                 cur_block->next = create_block(cur_end, szBlock, next_block);
                 if(!cur_block)
                     return 1;
-                *ptr = manager.memory;  //return address to user
+                *ptr = cur_end;  //return address to user
                 return 0;
             }
         }
         //no enough space between two blocks, search space after last block
         //current_block now is the last block
         char* last_end = cur_block->data + cur_block->size;
-        if(last_end + szBlock < manager.memory + manager.szMemory)  //enough memory
+        if(last_end + szBlock <= manager.memory + manager.szMemory)  //enough memory
         {                                                           //to add
             //create and initialize new block
             cur_block->next = create_block(last_end, szBlock, next_block);
             if(!cur_block)
                 return 1;
-            *ptr = manager.memory;      //return address to user
+            *ptr = last_end;      //return address to user
             return 0;
         }
         else
             return -2;          //not enough memory
     }//else(!manager.zero_block)
     return 1;    //unreachable
+}
+
+int _free(VA ptr)
+{
+    //check initialization and blocks existing
+    if(!is_inited || !manager.zero_block)
+        return 1;
+    //verify argument
+    if(!ptr)
+        return -1;          //non-valid address
+    //search block
+    Block   *prev_block = manager.zero_block,
+            *cur_block = manager.zero_block->next;
+    while(cur_block)
+    {
+        if(cur_block->data == ptr)
+        {
+            prev_block->next = cur_block->next;     //manage vector links
+            free(cur_block);                        //free block
+            cur_block = 0;
+            return 0;
+        }
+        prev_block = cur_block;
+        cur_block = cur_block->next;
+    }
+    return -1;   //block with such data pointer doesn't exist in vector of blocks
 }
 
 int initialize(int n, int szPage)
