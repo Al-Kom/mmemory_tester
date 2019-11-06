@@ -268,13 +268,13 @@ int integr_test_read_write(void)
 int main(void)
 {
     printf("Hello world!\n");
-//    printf("test initialize: \t\t%s\n", test_init()? "FAIL":"PASS");
-//    printf("test memory allocation: \t%s\n", test_malloc()? "FAIL":"PASS");
-//    printf("test memory free: \t\t%s\n", test_free()? "FAIL":"PASS");
-//    printf("INTGR test allocation-free: \t%s\n",
-//           integr_test_malloc_free()? "FAIL":"PASS");
-//    printf("test writing: \t\t\t%s\n", test_write()? "FAIL":"PASS");
-//    printf("test reading: \t\t\t%s\n", test_read()? "FAIL":"PASS");
+    printf("test initialize: \t\t%s\n", test_init()? "FAIL":"PASS");
+    printf("test memory allocation: \t%s\n", test_malloc()? "FAIL":"PASS");
+    printf("test memory free: \t\t%s\n", test_free()? "FAIL":"PASS");
+    printf("INTGR test allocation-free: \t%s\n",
+           integr_test_malloc_free()? "FAIL":"PASS");
+    printf("test writing: \t\t\t%s\n", test_write()? "FAIL":"PASS");
+    printf("test reading: \t\t\t%s\n", test_read()? "FAIL":"PASS");
     printf("INTGR test read-write: \t\t%s\n",
            integr_test_read_write()? "FAIL":"PASS");
     return 0;
