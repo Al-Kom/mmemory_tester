@@ -1,8 +1,6 @@
 #include "mmemory.h"
 #include <stdlib.h>
-
-/// TODO (alkom#6#11/02/19): make more DRY _malloc()
-/// TODO (alkom#4#11/02/19): add checking to null to all malloc() using
+#include <mem.h>
 
 //----------------------------------------------------------------------------------
 // memory structures
@@ -179,6 +177,34 @@ int _free(VA ptr)
             return 0;
         }
         prev_block = cur_block;
+        cur_block = cur_block->next;
+    }
+    return -1;   //block with such data pointer doesn't exist in vector of blocks
+}
+
+int _write (VA ptr, void* pBuffer, size_t szBuffer)
+{
+    //check initialization and blocks existing
+    if(!is_inited || !manager.zero_block)
+        return 1;
+    //verify argument
+    if(!ptr || !pBuffer || (long long)szBuffer <= 0)
+        return -1;
+    //search block with ptr
+    Block   *cur_block = manager.zero_block->next;
+    while(cur_block)
+    {
+        if(cur_block->data == ptr)  //the block is found
+        {
+            //try to write data
+            if(szBuffer <= cur_block->size)
+            {               //enough space in the block to write
+                memcpy(cur_block->data, pBuffer, szBuffer);
+                return 0;
+            }
+            else            //data to write is too large for the block
+                return -2;
+        }
         cur_block = cur_block->next;
     }
     return -1;   //block with such data pointer doesn't exist in vector of blocks
