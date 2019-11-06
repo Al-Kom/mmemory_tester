@@ -210,6 +210,34 @@ int _write (VA ptr, void* pBuffer, size_t szBuffer)
     return -1;   //block with such data pointer doesn't exist in vector of blocks
 }
 
+int _read (VA ptr, void* pBuffer, size_t szBuffer)
+{
+    //check initialization and blocks existing
+    if(!is_inited || !manager.zero_block)
+        return 1;
+    //verify argument
+    if(!ptr || !pBuffer || (long long)szBuffer < 0)
+        return -1;
+    //search block with ptr
+    Block   *cur_block = manager.zero_block->next;
+    while(cur_block)
+    {
+        if(cur_block->data == ptr)  //the block is found
+        {
+            //try to write data
+            if(szBuffer <= cur_block->size)
+            {               //enough space in the block to read
+                memcpy(pBuffer, cur_block->data, szBuffer);
+                return 0;
+            }
+            else            //requested data size more than block size
+                return -2;
+        }
+        cur_block = cur_block->next;
+    }
+    return -1;   //block with such data pointer doesn't exist in vector of blocks
+}
+
 int initialize(int n, int szPage)
 {
     is_inited = 0;
