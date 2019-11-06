@@ -181,14 +181,33 @@ int integr_test_read_write(void)
        _read(ptr2,buffer2,szBuffer)     ||
        strncmp(buffer1, buffer2, 5))
        return 1;
+    //test read/write character
+    char bufchar = 'A';
+    char rdch;
+    if(initialize(3,3)          ||
+       _malloc(&ptr1,5)         ||
+       _write(ptr1,&bufchar,sizeof(char))   ||
+       _read(ptr1,&rdch,sizeof(char))     ||
+       memcmp(&bufchar,&rdch,sizeof(char)))
+       return 1;
     //test read/write integer
-    int bufint = 4;
+    int bufint = 256;
     int rdint;
     if(initialize(3,3)          ||
        _malloc(&ptr1,5)         ||
-       _write(ptr1,&bufint,4)   ||
-       _read(ptr1,&rdint,4)     ||
-       memcmp(&bufint,&rdint,4))
+       _write(ptr1,&bufint,sizeof(int))   ||
+       _read(ptr1,&rdint,sizeof(int))     ||
+       memcmp(&bufint,&rdint,sizeof(int)))
+       return 1;
+    //test read/write float
+    free(ptr1);
+    float buffloat = 3.14;
+    float rdfl;
+    if(initialize(10,3)                     ||
+       _malloc(&ptr1,sizeof(float))         ||
+       _write(ptr1,&buffloat,sizeof(float)) ||
+       _read(ptr1,&rdfl,sizeof(float))      ||
+       memcmp(&buffloat,&rdfl,sizeof(float)))
        return 1;
     //-----negative tests-----
     //test write on non-initialized memory
