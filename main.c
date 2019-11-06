@@ -59,6 +59,26 @@ int test_free(void)
     return 0;
 }
 
+int test_write(void)
+{
+    VA ptr;
+    char* buffer = "Hello";
+    int szBuffer = 5;
+    //-----positive tests-----
+        //test writing in first block
+    initialize(3,3);
+    _malloc(&ptr,6);
+    if(_write(ptr, buffer, szBuffer))
+        return 1;
+    //-----negative tests-----
+        //test bad parameters
+    if(!_write(0, buffer, szBuffer)   ||
+       !_write(ptr, 0, szBuffer)     ||
+       !_write(ptr, buffer, -1))
+        return 1;
+    return 0;
+}
+
 //----------------------------------------------------------------------------------
 // integrated test functions
 //----------------------------------------------------------------------------------
@@ -88,8 +108,8 @@ int integr_test_malloc_free(void)
         return 1;
     //-----negative tests-----
     //test allocation of non-initialized memory
-    if(!initialize(-3,3) ||
-       !_malloc(&ptr1, 4))
+    initialize(-3,3);
+    if(!_malloc(&ptr1, 4))
         return 1;
     //test "no enough memory" when no blocks exist
     if(initialize(3,3) ||
@@ -111,6 +131,41 @@ int integr_test_malloc_free(void)
     return 0;
 }
 
+int integr_test_read_write(void)
+{
+    ///TODO: add tests with _write and _read
+    VA ptr1,ptr2;
+    char* buffer = "Hello";
+    int szBuffer = 5;
+    //-----positive tests-----
+    //test write in non-first block part of buffer
+    if(initialize(3,3)  ||
+       _malloc(&ptr1,4) ||
+       _malloc(&ptr2,3) ||
+       _write(ptr2,buffer,szBuffer/2))
+       return 1;
+    //-----negative tests-----
+    //test write on non-initialized memory
+    initialize(-3,0);
+    _malloc(&ptr1,6);
+    if(!_write(ptr1,buffer,szBuffer))
+        return 1;
+    //test write data with size more than block (overwriting)
+    if(initialize(3,3)     ||
+       _malloc(&ptr1,4)    ||
+       !_write(ptr1,buffer,5))
+        return 1;
+    //test write in non-existing block
+    if(!_write(ptr2,buffer,szBuffer))
+        return 1;
+    //test write in freed block
+    if(_malloc(&ptr2,5) ||
+       _free(ptr2)      ||
+       !_write(ptr2,buffer,szBuffer))
+        return 1;
+    return 0;
+}
+
 //----------------------------------------------------------------------------------
 // main
 //----------------------------------------------------------------------------------
@@ -123,5 +178,8 @@ int main(void)
     printf("test memory free: \t\t%s\n", test_free()? "FAIL":"PASS");
     printf("INTGR test allocation-free: \t%s\n",
            integr_test_malloc_free()? "FAIL":"PASS");
+    printf("test writing: \t\t\t%s\n", test_write()? "FAIL":"PASS");
+    printf("INTGR test read-write: \t\t%s\n",
+           integr_test_read_write()? "FAIL":"PASS");
     return 0;
 }
