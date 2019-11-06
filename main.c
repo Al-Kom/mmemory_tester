@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "mmemory.h"
 
 //----------------------------------------------------------------------------------
@@ -54,7 +55,7 @@ int test_free(void)
     _malloc(&ptr,4);
     if(!_free(0)        ||
        !_free(ptr + 1)  ||
-       !_free(-1))
+       !_free((VA)-1))
         return 1;
     return 0;
 }
@@ -75,6 +76,26 @@ int test_write(void)
     if(!_write(0, buffer, szBuffer)   ||
        !_write(ptr, 0, szBuffer)     ||
        !_write(ptr, buffer, -1))
+        return 1;
+    return 0;
+}
+
+int test_read(void)
+{
+    VA ptr;
+    void* buffer=malloc(10);
+    int szBuffer = 3;
+    //-----positive tests-----
+        //test read first block
+    initialize(3,3);
+    _malloc(&ptr,6);
+    if(_read(ptr, buffer, szBuffer))
+        return 1;
+    //-----negative tests-----
+        //test bad parameters
+    if(!_read(0, buffer, szBuffer)   ||
+       !_read(ptr, 0, szBuffer)     ||
+       !_read(ptr, buffer, -1))
         return 1;
     return 0;
 }
@@ -135,34 +156,89 @@ int integr_test_read_write(void)
 {
     ///TODO: add tests with _write and _read
     VA ptr1,ptr2;
-    char* buffer = "Hello";
+    char    *buffer1 = malloc(10),
+            *buffer2 = malloc(10);
+    strcpy(buffer1,"Hello");
     int szBuffer = 5;
     //-----positive tests-----
     //test write in non-first block part of buffer
     if(initialize(3,3)  ||
        _malloc(&ptr1,4) ||
-       _malloc(&ptr2,3) ||
-       _write(ptr2,buffer,szBuffer/2))
+       _malloc(&ptr2,5) ||
+       _write(ptr2,buffer1,szBuffer/2))
+       return 1;
+    //test read in non-written non-first block part of buffer
+    if(initialize(3,3)  ||
+       _malloc(&ptr1,4) ||
+       _malloc(&ptr2,5) ||
+       _read(ptr2,buffer1,szBuffer/2))
+       return 1;
+    //test read written data in second block and verify data
+    if(initialize(3,3)                  ||
+       _malloc(&ptr1,3)                 ||
+       _malloc(&ptr2,6)                 ||
+       _write(ptr2,buffer1,szBuffer)    ||
+       _read(ptr2,buffer2,szBuffer)     ||
+       strncmp(buffer1, buffer2, 5))
+       return 1;
+    //test read/write integer
+    int bufint = 4;
+    int rdint;
+    if(initialize(3,3)          ||
+       _malloc(&ptr1,5)         ||
+       _write(ptr1,&bufint,4)   ||
+       _read(ptr1,&rdint,4)     ||
+       memcmp(&bufint,&rdint,4))
        return 1;
     //-----negative tests-----
     //test write on non-initialized memory
     initialize(-3,0);
     _malloc(&ptr1,6);
-    if(!_write(ptr1,buffer,szBuffer))
+    if(!_write(ptr1,buffer1,szBuffer))
+        return 1;
+    //test reading from non-initialized memory
+    initialize(-3,0);
+    _malloc(&ptr1,6);
+    if(!_read(ptr1,buffer1,szBuffer))
         return 1;
     //test write data with size more than block (overwriting)
     if(initialize(3,3)     ||
        _malloc(&ptr1,4)    ||
-       !_write(ptr1,buffer,5))
+       !_write(ptr1,buffer1,5))
+        return 1;
+    //test read data with size more than block (over reading)
+    if(initialize(3,3)     ||
+       _malloc(&ptr1,4)    ||
+       !_read(ptr1,buffer1,5))
         return 1;
     //test write in non-existing block
-    if(!_write(ptr2,buffer,szBuffer))
+    if(!_write(ptr2,buffer1,szBuffer))
+        return 1;
+    //test read from non-existing block
+    if(!_read(ptr2,buffer1,szBuffer))
         return 1;
     //test write in freed block
     if(_malloc(&ptr2,5) ||
        _free(ptr2)      ||
-       !_write(ptr2,buffer,szBuffer))
+       !_write(ptr2,buffer1,szBuffer))
         return 1;
+    //test write (overwrite) data in two blocks and read the same data
+    free(buffer1);
+    buffer1 = (char*)malloc(6);
+    strncpy(buffer1,"Hi me",5);
+    strncpy(buffer2,"there!",6);
+    char    *rd1=malloc(3),
+            *rd2=malloc(6);
+    if(initialize(3,3)          ||
+       _malloc(&ptr1,3)         ||
+       _malloc(&ptr2,6)         ||
+       !_write(ptr1,buffer1,5)  ||
+       _write(ptr2,buffer2,6)   ||
+       _read(ptr1,rd1,3)        ||
+       _read(ptr2,rd2,6)        ||
+       !strncmp(strcat(buffer1,buffer2),strcat(rd1,rd2),9) ||
+       !strncmp(buffer1,rd1,3)  ||  strncmp(buffer2,rd2,6))
+       return 1;
     return 0;
 }
 
@@ -173,12 +249,13 @@ int integr_test_read_write(void)
 int main(void)
 {
     printf("Hello world!\n");
-    printf("test initialize: \t\t%s\n", test_init()? "FAIL":"PASS");
-    printf("test memory allocation: \t%s\n", test_malloc()? "FAIL":"PASS");
-    printf("test memory free: \t\t%s\n", test_free()? "FAIL":"PASS");
-    printf("INTGR test allocation-free: \t%s\n",
-           integr_test_malloc_free()? "FAIL":"PASS");
-    printf("test writing: \t\t\t%s\n", test_write()? "FAIL":"PASS");
+//    printf("test initialize: \t\t%s\n", test_init()? "FAIL":"PASS");
+//    printf("test memory allocation: \t%s\n", test_malloc()? "FAIL":"PASS");
+//    printf("test memory free: \t\t%s\n", test_free()? "FAIL":"PASS");
+//    printf("INTGR test allocation-free: \t%s\n",
+//           integr_test_malloc_free()? "FAIL":"PASS");
+//    printf("test writing: \t\t\t%s\n", test_write()? "FAIL":"PASS");
+//    printf("test reading: \t\t\t%s\n", test_read()? "FAIL":"PASS");
     printf("INTGR test read-write: \t\t%s\n",
            integr_test_read_write()? "FAIL":"PASS");
     return 0;
